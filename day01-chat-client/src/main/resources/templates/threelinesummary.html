@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI 3줄 요약기</title>
+    <!-- Google Fonts 및 Material Icons 로드 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --card-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            --glow-color: rgba(99, 102, 241, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .summary-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 50px 0 var(--glow-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        /* 헤더 스타일 */
+        .summary-header {
+            padding: 24px;
+            background-color: #1e293b;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .summary-header .logo-icon {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .summary-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #f8fafc, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .summary-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(99, 102, 241, 0.05);
+            color: #a5b4fc;
+        }
+
+        .nav-button.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+        }
+
+
+        /* 메인 컨텐츠 영역 */
+        .summary-body {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            background-color: #0f172a;
+        }
+
+        /* 입력 카드 */
+        .input-card {
+            background: var(--card-gradient);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .summary-textarea {
+            width: 100%;
+            height: 180px;
+            background-color: #0b0f19;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-main);
+            padding: 16px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .summary-textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+        }
+
+        .textarea-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .char-count {
+            transition: color 0.2s;
+        }
+
+        .char-count.limit-approaching {
+            color: #fb7185;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .btn-clear {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-clear:hover {
+            border-color: #f43f5e;
+            color: #fda4af;
+            background-color: rgba(244, 63, 94, 0.05);
+        }
+
+        .btn-submit {
+            background-color: var(--accent-color);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            background-color: #475569;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border-color: transparent;
+        }
+
+        /* 결과 패널 */
+        .result-card {
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--card-gradient);
+            padding: 24px;
+            display: none; /* 초기 상태 비활성화 */
+            flex-direction: column;
+            gap: 20px;
+            transition: all 0.4s ease;
+        }
+
+        .result-card.active {
+            display: flex;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+        }
+
+        .result-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 3줄 리스트 레이아웃 */
+        .summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            padding: 18px;
+            border-radius: 12px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .summary-item.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .summary-number {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            background-color: rgba(99, 102, 241, 0.1);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            flex-shrink: 0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+        }
+
+        .summary-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            padding-top: 3px;
+        }
+
+        .btn-copy {
+            margin-top: 10px;
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: #a5b4fc;
+            align-self: flex-end;
+            padding: 10px 20px;
+        }
+
+        .btn-copy:hover {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* 로딩 뼈대 애니메이션 (Skeleton screen) */
+        .skeleton-container {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--card-gradient);
+        }
+
+        .skeleton-container.active {
+            display: flex;
+        }
+
+        .skeleton-title {
+            width: 120px;
+            height: 20px;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-item {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: rgba(15, 23, 42, 0.6);
+        }
+
+        .skeleton-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .skeleton-text-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .skeleton-line {
+            height: 14px;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        .skeleton-line.l1 { width: 90%; }
+        .skeleton-line.l2 { width: 75%; }
+        .skeleton-line.l3 { width: 60%; }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* 토스트 알림 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #1e293b;
+            color: #a5b4fc;
+            border: 1px solid var(--accent-color);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.2);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="summary-container" id="mainContainer">
+        <!-- 헤더 -->
+        <div class="summary-header">
+            <div class="header-left">
+                <div class="logo-icon">
+                    <span class="material-icons">summarize</span>
+                </div>
+                <div>
+                    <h1>Spring AI 3줄 요약기</h1>
+                    <p>텍스트를 입력하면 AI가 핵심만 3줄로 정리합니다.</p>
+                </div>
+            </div>
+            <a href="/chat" class="nav-button" id="backToChatBtn">
+                <span class="material-icons">forum</span>
+                <span>채팅방으로 이동</span>
+            </a>
+        </div>
+
+        <!-- 본문 -->
+        <div class="summary-body">
+            <!-- 입력 영역 -->
+            <div class="input-card">
+                <div class="input-label">
+                    <span class="material-icons">edit_note</span>
+                    <span>요약할 텍스트 입력</span>
+                </div>
+                <textarea id="summaryTextarea" class="summary-textarea" placeholder="이곳에 요약할 뉴스 기사, 문서, 논문 등의 텍스트를 붙여넣기 해주세요 (최소 20자 이상)..." maxlength="5000"></textarea>
+                <div class="textarea-footer">
+                    <span class="char-count" id="charCount">0 / 5,000자</span>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-clear" id="clearBtn">
+                            <span class="material-icons">delete_sweep</span>
+                            <span>지우기</span>
+                        </button>
+                        <button type="button" class="btn btn-submit" id="submitBtn" disabled>
+                            <span class="material-icons">auto_awesome</span>
+                            <span>요약하기</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 로딩 영역 -->
+            <div class="skeleton-container" id="skeletonLoader">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-item">
+                    <div class="skeleton-number"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton-line l1"></div>
+                        <div class="skeleton-line l2"></div>
+                    </div>
+                </div>
+                <div class="skeleton-item">
+                    <div class="skeleton-number"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton-line l1"></div>
+                        <div class="skeleton-line l3"></div>
+                    </div>
+                </div>
+                <div class="skeleton-item">
+                    <div class="skeleton-number"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton-line l2"></div>
+                        <div class="skeleton-line l3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결과 영역 -->
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <div class="result-title">
+                        <span class="material-icons">auto_stories</span>
+                        <span>요약 결과</span>
+                    </div>
+                </div>
+                <div class="summary-list" id="summaryList">
+                    <!-- 요약 결과 아이템이 동적으로 들어올 자리 -->
+                    <div class="summary-item" id="item1">
+                        <div class="summary-number">01</div>
+                        <div class="summary-text" id="text1"></div>
+                    </div>
+                    <div class="summary-item" id="item2">
+                        <div class="summary-number">02</div>
+                        <div class="summary-text" id="text2"></div>
+                    </div>
+                    <div class="summary-item" id="item3">
+                        <div class="summary-number">03</div>
+                        <div class="summary-text" id="text3"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-copy" id="copyBtn">
+                    <span class="material-icons">content_copy</span>
+                    <span>결과 복사하기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 알림 -->
+    <div class="toast" id="copyToast">
+        <span class="material-icons">check_circle</span>
+        <span>요약 내용이 클립보드에 복사되었습니다!</span>
+    </div>
+
+    <script>
+        const textarea = document.getElementById('summaryTextarea');
+        const charCount = document.getElementById('charCount');
+        const clearBtn = document.getElementById('clearBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const skeletonLoader = document.getElementById('skeletonLoader');
+        const resultCard = document.getElementById('resultCard');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyToast = document.getElementById('copyToast');
+
+        const text1 = document.getElementById('text1');
+        const text2 = document.getElementById('text2');
+        const text3 = document.getElementById('text3');
+        const item1 = document.getElementById('item1');
+        const item2 = document.getElementById('item2');
+        const item3 = document.getElementById('item3');
+
+        // 입력 글자수 체크 & 버튼 활성화/비활성화
+        textarea.addEventListener('input', () => {
+            const length = textarea.value.length;
+            charCount.textContent = `${length.toLocaleString()} / 5,000자`;
+
+            if (length >= 4500) {
+                charCount.classList.add('limit-approaching');
+            } else {
+                charCount.classList.remove('limit-approaching');
+            }
+
+            // 최소 20자 이상 입력 시 작동
+            submitBtn.disabled = length < 20;
+        });
+
+        // 지우기 버튼
+        clearBtn.addEventListener('click', () => {
+            textarea.value = '';
+            charCount.textContent = '0 / 5,000자';
+            charCount.classList.remove('limit-approaching');
+            submitBtn.disabled = true;
+            resultCard.classList.remove('active');
+            
+            // 기존 텍스트 제거
+            text1.textContent = '';
+            text2.textContent = '';
+            text3.textContent = '';
+            item1.classList.remove('show');
+            item2.classList.remove('show');
+            item3.classList.remove('show');
+            textarea.focus();
+        });
+
+        // AI 응답 파싱 유틸리티 함수
+        function parseThreeLines(text) {
+            let lines = text.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+            
+            // 번호 서식 (1. / 1) / - / * 등) 제거
+            let cleanLines = lines.map(line => {
+                return line.replace(/^\d+[\.\)\s\-*]+\s*/, '');
+            });
+
+            // 3줄 보장
+            while (cleanLines.length < 3) {
+                cleanLines.push("");
+            }
+            return cleanLines.slice(0, 3);
+        }
+
+        // 요약하기 요청 처리
+        submitBtn.addEventListener('click', async () => {
+            const dataText = textarea.value.trim();
+            if (dataText.length < 20) return;
+
+            // 로딩 상태 시작
+            textarea.disabled = true;
+            submitBtn.disabled = true;
+            clearBtn.disabled = true;
+            resultCard.classList.remove('active');
+            
+            // 이전 결과 클래스 초기화
+            item1.classList.remove('show');
+            item2.classList.remove('show');
+            item3.classList.remove('show');
+
+            skeletonLoader.classList.add('active');
+            skeletonLoader.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            try {
+                // 백엔드 POST API 호출
+                const response = await fetch('/api/summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ text: dataText })
+                });
+
+                if (!response.ok) {
+                    throw new Error('서버 에러가 발생했습니다.');
+                }
+
+                const responseText = await response.text();
+                const parsedSummaryList = parseThreeLines(responseText);
+
+                // 로딩 종료
+                skeletonLoader.classList.remove('active');
+
+                // 결과 매핑
+                text1.textContent = parsedSummaryList[0];
+                text2.textContent = parsedSummaryList[1];
+                text3.textContent = parsedSummaryList[2];
+
+                // 결과 카드 노출
+                resultCard.classList.add('active');
+                resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // 시간 지연 순차 애니메이션 (Staggered Animation)
+                setTimeout(() => item1.classList.add('show'), 150);
+                setTimeout(() => item2.classList.add('show'), 400);
+                setTimeout(() => item3.classList.add('show'), 650);
+
+            } catch (error) {
+                console.error(error);
+                skeletonLoader.classList.remove('active');
+                alert('요약 중 에러가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+            } finally {
+                // 상태 복구
+                textarea.disabled = false;
+                submitBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        });
+
+        // 결과 클립보드 복사
+        copyBtn.addEventListener('click', () => {
+            const sumText = `1. ${text1.textContent}\n2. ${text2.textContent}\n3. ${text3.textContent}`;
+            
+            navigator.clipboard.writeText(sumText).then(() => {
+                // 토스트 알림 띄우기
+                copyToast.classList.add('show');
+                setTimeout(() => {
+                    copyToast.classList.remove('show');
+                }, 2500);
+            }).catch(err => {
+                console.error('클립보드 복사 실패:', err);
+                alert('복사에 실패했습니다. 직접 복사해 주세요.');
+            });
+        });
+    </script>
+</body>
+
+</html>

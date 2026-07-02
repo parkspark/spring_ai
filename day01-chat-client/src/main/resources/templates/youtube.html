@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>흠터레스팅 AI 유튜브 추천기</title>
+    <!-- Google Fonts 및 Material Icons 로드 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: #1f1f1f;
+            --card-hover: #2d2d2d;
+            --accent-color: #ff0000;
+            --accent-hover: #cc0000;
+            --text-main: #f1f1f1;
+            --text-muted: #aaa;
+            --border-color: #3f3f3f;
+            --glow-color: rgba(255, 0, 0, 0.1);
+            --card-gradient: linear-gradient(180deg, #282828 0%, #1f1f1f 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .youtube-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 40px 0 var(--glow-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        /* 헤더 스타일 */
+        .youtube-header {
+            padding: 24px;
+            background-color: #161616;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .youtube-header .logo-icon {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+        }
+
+        .youtube-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #ffffff, #ff8e8e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .youtube-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .nav-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(255, 0, 0, 0.05);
+            color: #ff8e8e;
+        }
+
+        .nav-button.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        /* 메인 콘텐츠 영역 */
+        .youtube-body {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* 검색/입력창 스타일 */
+        .search-card {
+            background-color: #161616;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .search-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ff8e8e;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 12px;
+            position: relative;
+        }
+
+        .search-input {
+            flex: 1;
+            background-color: #0f0f0f;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+        }
+
+        .btn-search {
+            background-color: var(--accent-color);
+            border: none;
+            color: white;
+            padding: 0 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-search:hover {
+            background-color: var(--accent-hover);
+            box-shadow: 0 6px 18px rgba(255, 0, 0, 0.45);
+        }
+
+        .btn-search:disabled {
+            background-color: #3f3f3f;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* 결과 패널 */
+        .results-panel {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .results-panel.active {
+            display: flex;
+        }
+
+        .results-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ff8e8e;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* 비디오 카드 그리드 */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background-color: #161616;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover {
+            border-color: var(--accent-color);
+            background-color: var(--card-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 비디오 썸네일 플레이스홀더 */
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #2b0c0c 0%, #120303 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .video-thumbnail .play-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.4));
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover .play-icon {
+            transform: scale(1.15);
+            color: #ff4e4e;
+        }
+
+        .video-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* 비디오 내용 */
+        .video-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .channel-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .channel-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .video-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-main);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.8em;
+        }
+
+        .video-desc {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            margin-top: 4px;
+            flex: 1;
+        }
+
+        .btn-watch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: #ff8e8e;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-watch:hover {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 0, 0, 0.25);
+        }
+
+        /* 로딩 스켈레톤 디자인 */
+        .skeleton-panel {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .skeleton-panel.active {
+            display: flex;
+        }
+
+        .skeleton-card {
+            background-color: #161616;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .skeleton-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+            background-size: 200% 100%;
+            animation: pulse-bg 1.5s infinite;
+        }
+
+        .skeleton-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+            background-size: 200% 100%;
+            animation: pulse-bg 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        .skeleton-line.avatar-line {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .skeleton-line.title-l1 {
+            width: 90%;
+            height: 14px;
+        }
+
+        .skeleton-line.title-l2 {
+            width: 70%;
+            height: 14px;
+        }
+
+        .skeleton-line.desc-l1 {
+            width: 100%;
+            height: 35px;
+        }
+
+        .skeleton-line.button-line {
+            width: 100%;
+            height: 36px;
+            border-radius: 6px;
+        }
+
+        @keyframes pulse-bg {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="youtube-container">
+        <!-- 헤더 -->
+        <div class="youtube-header">
+            <div class="header-left">
+                <div class="logo-icon">
+                    <span class="material-icons">smart_display</span>
+                </div>
+                <div>
+                    <h1>흠터레스팅 AI 유튜브 추천기</h1>
+                    <p>당신의 관심사에 완벽하게 어울리는 유튜브 콘텐츠를 발굴합니다.</p>
+                </div>
+            </div>
+            <a href="/chat" class="nav-button">
+                <span class="material-icons">forum</span>
+                <span>채팅방으로 이동</span>
+            </a>
+        </div>
+
+        <!-- 본문 -->
+        <div class="youtube-body">
+            <!-- 검색 영역 -->
+            <div class="search-card">
+                <div class="search-label">
+                    <span class="material-icons">psychology</span>
+                    <span>추천받고 싶은 주제나 질문 입력</span>
+                </div>
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" class="search-input"
+                        placeholder="예: 스프링 AI 기본 활용법, 피아노 독학하는 법, 홈트레이닝 루틴..." autocomplete="off">
+                    <button type="button" class="btn-search" id="searchBtn" disabled>
+                        <span class="material-icons">search</span>
+                        <span>검색</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 로딩 영역 -->
+            <div class="skeleton-panel" id="skeletonPanel">
+                <div class="results-header">
+                    <span class="material-icons">hourglass_empty</span>
+                    <span>AI가 관련 유튜브 영상을 매칭하는 중...</span>
+                </div>
+                <div class="video-grid">
+                    <!-- 3개 스켈레톤 카드 -->
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-info">
+                            <div class="channel-info">
+                                <div class="skeleton-line avatar-line"></div>
+                                <div class="skeleton-line" style="width: 80px;"></div>
+                            </div>
+                            <div class="skeleton-line title-l1"></div>
+                            <div class="skeleton-line title-l2"></div>
+                            <div class="skeleton-line desc-l1"></div>
+                            <div class="skeleton-line button-line"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-info">
+                            <div class="channel-info">
+                                <div class="skeleton-line avatar-line"></div>
+                                <div class="skeleton-line" style="width: 80px;"></div>
+                            </div>
+                            <div class="skeleton-line title-l1"></div>
+                            <div class="skeleton-line title-l2"></div>
+                            <div class="skeleton-line desc-l1"></div>
+                            <div class="skeleton-line button-line"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-info">
+                            <div class="channel-info">
+                                <div class="skeleton-line avatar-line"></div>
+                                <div class="skeleton-line" style="width: 80px;"></div>
+                            </div>
+                            <div class="skeleton-line title-l1"></div>
+                            <div class="skeleton-line title-l2"></div>
+                            <div class="skeleton-line desc-l1"></div>
+                            <div class="skeleton-line button-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결과 영역 -->
+            <div class="results-panel" id="resultsPanel">
+                <div class="results-header">
+                    <span class="material-icons">auto_awesome</span>
+                    <span>추천 동영상 리스트</span>
+                </div>
+                <div class="video-grid">
+                    <!-- 카드 1 -->
+                    <div class="video-card" id="card1">
+                        <div class="video-thumbnail"
+                            style="background: linear-gradient(135deg, #3b0c0c 0%, #120303 100%);">
+                            <span class="material-icons play-icon">play_arrow</span>
+                            <div class="video-duration">추천</div>
+                        </div>
+                        <div class="video-info">
+                            <div class="channel-info">
+                                <div class="channel-avatar"><span class="material-icons"
+                                        style="font-size: 0.95rem;">account_circle</span></div>
+                                <div class="channel-name" id="channel1"></div>
+                            </div>
+                            <div class="video-title" id="title1"></div>
+                            <div class="video-desc" id="desc1"></div>
+                            <a href="#" target="_blank" class="btn-watch" id="link1">
+                                <span class="material-icons">open_in_new</span>
+                                <span>유튜브에서 시청하기</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 카드 2 -->
+                    <div class="video-card" id="card2">
+                        <div class="video-thumbnail"
+                            style="background: linear-gradient(135deg, #102a45 0%, #030a12 100%);">
+                            <span class="material-icons play-icon">play_arrow</span>
+                            <div class="video-duration">추천</div>
+                        </div>
+                        <div class="video-info">
+                            <div class="channel-info">
+                                <div class="channel-avatar"><span class="material-icons"
+                                        style="font-size: 0.95rem;">account_circle</span></div>
+                                <div class="channel-name" id="channel2"></div>
+                            </div>
+                            <div class="video-title" id="title2"></div>
+                            <div class="video-desc" id="desc2"></div>
+                            <a href="#" target="_blank" class="btn-watch" id="link2">
+                                <span class="material-icons">open_in_new</span>
+                                <span>유튜브에서 시청하기</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 카드 3 -->
+                    <div class="video-card" id="card3">
+                        <div class="video-thumbnail"
+                            style="background: linear-gradient(135deg, #0f3b25 0%, #03120a 100%);">
+                            <span class="material-icons play-icon">play_arrow</span>
+                            <div class="video-duration">추천</div>
+                        </div>
+                        <div class="video-info">
+                            <div class="channel-info">
+                                <div class="channel-avatar"><span class="material-icons"
+                                        style="font-size: 0.95rem;">account_circle</span></div>
+                                <div class="channel-name" id="channel3"></div>
+                            </div>
+                            <div class="video-title" id="title3"></div>
+                            <div class="video-desc" id="desc3"></div>
+                            <a href="#" target="_blank" class="btn-watch" id="link3">
+                                <span class="material-icons">open_in_new</span>
+                                <span>유튜브에서 시청하기</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const skeletonPanel = document.getElementById('skeletonPanel');
+        const resultsPanel = document.getElementById('resultsPanel');
+
+        const card1 = document.getElementById('card1');
+        const card2 = document.getElementById('card2');
+        const card3 = document.getElementById('card3');
+
+        const channel1 = document.getElementById('channel1');
+        const channel2 = document.getElementById('channel2');
+        const channel3 = document.getElementById('channel3');
+
+        const title1 = document.getElementById('title1');
+        const title2 = document.getElementById('title2');
+        const title3 = document.getElementById('title3');
+
+        const desc1 = document.getElementById('desc1');
+        const desc2 = document.getElementById('desc2');
+        const desc3 = document.getElementById('desc3');
+
+        const link1 = document.getElementById('link1');
+        const link2 = document.getElementById('link2');
+        const link3 = document.getElementById('link3');
+
+        // 입력창 활성화 체크
+        searchInput.addEventListener('input', () => {
+            searchBtn.disabled = searchInput.value.trim().length < 2;
+        });
+
+        // 엔터키 작동
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !searchBtn.disabled) {
+                searchBtn.click();
+            }
+        });
+
+        // JSON 파싱 유틸리티 함수
+        function parseYoutubeJson(text) {
+            let cleanText = text.trim();
+            // markdown 코드 블록 제거
+            if (cleanText.startsWith("```")) {
+                cleanText = cleanText.replace(/^```json\s*/, "").replace(/```$/, "").trim();
+            }
+            try {
+                let list = JSON.parse(cleanText);
+                if (Array.isArray(list)) {
+                    while (list.length < 3) {
+                        list.push({
+                            title: "유튜브 추천 동영상",
+                            channel: "유튜브 추천",
+                            description: "상세 분석 오류로 채워진 플레이스홀더 추천 영상입니다.",
+                            searchQuery: "유튜브"
+                        });
+                    }
+                    return list.slice(0, 3);
+                }
+            } catch (e) {
+                console.error("유튜브 추천 JSON 파싱 실패:", e);
+            }
+
+            // 파싱 실패시 폴백
+            return [
+                { title: "검색 결과 관련 영상 1", channel: "유튜브", description: "AI가 추천한 영상입니다. 아래 버튼을 클릭하여 시청하세요.", searchQuery: searchInput.value },
+                { title: "검색 결과 관련 영상 2", channel: "유튜브", description: "AI가 추천한 영상입니다. 아래 버튼을 클릭하여 시청하세요.", searchQuery: searchInput.value },
+                { title: "검색 결과 관련 영상 3", channel: "유튜브", description: "AI가 추천한 영상입니다. 아래 버튼을 클릭하여 시청하세요.", searchQuery: searchInput.value }
+            ];
+        }
+
+        // 추천 버튼 클릭
+        searchBtn.addEventListener('click', async () => {
+            const prompt = searchInput.value.trim();
+            if (prompt.length < 2) return;
+
+            // UI 초기화 및 로딩 시작
+            searchInput.disabled = true;
+            searchBtn.disabled = true;
+            resultsPanel.classList.remove('active');
+
+            // 기존 카드 애니메이션 클래스 초기화
+            card1.classList.remove('show');
+            card2.classList.remove('show');
+            card3.classList.remove('show');
+
+            skeletonPanel.classList.add('active');
+            skeletonPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            try {
+                const response = await fetch('/api/youtube', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error('서버 에러');
+                }
+
+                const responseText = await response.text();
+                const recommendations = parseYoutubeJson(responseText);
+
+                // 스케톤 종료
+                skeletonPanel.classList.remove('active');
+
+                // 데이터 매핑
+                channel1.textContent = recommendations[0].channel;
+                channel2.textContent = recommendations[1].channel;
+                channel3.textContent = recommendations[2].channel;
+
+                title1.textContent = recommendations[0].title;
+                title2.textContent = recommendations[1].title;
+                title3.textContent = recommendations[2].title;
+
+                desc1.textContent = recommendations[0].description;
+                desc2.textContent = recommendations[1].description;
+                desc3.textContent = recommendations[2].description;
+
+                // 유튜브 검색 URL 생성
+                link1.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(recommendations[0].searchQuery || (recommendations[0].channel + ' ' + recommendations[0].title))}`;
+                link2.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(recommendations[1].searchQuery || (recommendations[1].channel + ' ' + recommendations[1].title))}`;
+                link3.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(recommendations[2].searchQuery || (recommendations[2].channel + ' ' + recommendations[2].title))}`;
+
+                // 결과 노출 및 스크롤
+                resultsPanel.classList.add('active');
+                resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // 순차적 페이드인 애니메이션
+                setTimeout(() => card1.classList.add('show'), 150);
+                setTimeout(() => card2.classList.add('show'), 400);
+                setTimeout(() => card3.classList.add('show'), 650);
+
+            } catch (error) {
+                console.error(error);
+                skeletonPanel.classList.remove('active');
+                alert('유튜브 영상 추천에 실패했습니다. 다시 시도해 주세요.');
+            } finally {
+                searchInput.disabled = false;
+                searchBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
