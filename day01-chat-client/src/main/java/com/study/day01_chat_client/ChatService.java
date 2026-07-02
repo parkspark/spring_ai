@@ -13,10 +13,25 @@ public class ChatService {
         this.chatClient = builder.build();
     }
 
-    // 실제 AI 질문 메서드
+    // 일반 응답
     public String chat(String message) {
         String result = chatClient.prompt()
-                .user(message) // 사용자가 실제 입력한 질문
+                .user(message) // User Prompt 사용자가 실제 입력한 질문
+                .call() // 호출 -> 응답할때까지 기다림
+                .content(); // text 응답꺼내기
+
+        return result;
+    }
+
+    // 교사 역할 응답
+    public String teacher(String message) {
+        String result = chatClient.prompt()
+                .system("""
+                        당신은 Java, Spring Boot, Spring AI를 가르치는 선생님입니다.
+                        초등 학생에게 설명하듯이 답변 해 주세요.
+
+                        """) // System Prompt 역할을 지시
+                .user(message) // User Prompt 사용자가 실제 입력한 질문
                 .call() // 호출 -> 응답할때까지 기다림
                 .content(); // text 응답꺼내기
 
