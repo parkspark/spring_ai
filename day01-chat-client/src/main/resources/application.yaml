@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: day01-chat-client
+  ai:
+    google:
+      genai:
+        api-key: ${GOOGLE_API_KEY} #환경변수
+        chat:
+          model: gemini-3.1-flash-lite # modelo
+          temperature: 0.7 # randomness # 0에 가까울수록 일관된 답변, 1에 가까울수록 다양한 답변
+          # top-p: 1.0 # 확률분포에서 하위 몇 %까지 고려할지
