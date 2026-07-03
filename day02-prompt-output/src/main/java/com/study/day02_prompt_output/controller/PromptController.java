@@ -104,6 +104,34 @@ public class PromptController {
                 .entity(Prompts.class);
     }
 
+    @GetMapping("/simulate/zero-shot")
+    public String simulateZeroShot(@RequestParam("text") String text) {
+        return chatClient.prompt()
+                .user(u -> u.text("""
+                        다음 리뷰의 핵심 키워드를 추출해줘.
+                        
+                        리뷰: {text}
+                        """)
+                        .param("text", text))
+                .call()
+                .content();
+    }
+
+    @GetMapping("/simulate/few-shot")
+    public String simulateFewShot(@RequestParam("text") String text) {
+        return chatClient.prompt()
+                .user(u -> u.text("""
+                        리뷰에서 [장점, 단점, 별점] 형식으로 추출해.
+                        
+                        리뷰: "가성비 최고! 근데 배터리가 빨리 닳음" -> [장점:가격, 단점:배터리, 별점:4]
+                        리뷰: "배송은 하루만에 와서 좋았는데, 포장이 다 뜯어져 있어서 기분이 별로였어요. 맛은 그럭저럭 괜찮네요." -> [장점:배송, 단점:포장, 별점:3]
+                        리뷰: "{text}" -> 
+                        """)
+                        .param("text", text))
+                .call()
+                .content();
+    }
+
     @org.springframework.web.bind.annotation.ExceptionHandler(Exception.class)
     public org.springframework.http.ResponseEntity<String> handleException(Exception e) {
         e.printStackTrace();

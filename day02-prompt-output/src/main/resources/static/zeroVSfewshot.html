@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero-shot vs Few-shot 프롬프팅 비교</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .gradient-text { background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.1), 0 8px 10px -6px rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .loading-dot { animation: loading 1.4s infinite ease-in-out both; }
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto space-y-20">
+        
+        <!-- Header -->
+        <header class="text-center space-y-6">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-sm font-medium text-sky-400 mb-4">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Prompt Engineering Guide
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">
+                <span class="gradient-text">Zero-shot</span> vs <span class="gradient-text">Few-shot</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                프롬프팅 방식에 따른 AI 모델의 응답 품질과 특성 차이를 한눈에 비교하고 시뮬레이션 해보세요.
+            </p>
+        </header>
+
+        <!-- 1. Concept Cards -->
+        <section class="grid md:grid-cols-2 gap-8">
+            <div class="glass-panel p-8 rounded-3xl card-hover relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+                <div class="w-14 h-14 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center mb-6 text-sky-400 shadow-lg shadow-sky-900/20">
+                    <i class="fa-solid fa-bolt text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-4 text-white">Zero-shot (제로샷)</h2>
+                <p class="text-slate-300 leading-relaxed mb-6">
+                    모델에게 사전 예시를 제공하지 않고 <strong class="text-sky-300 font-semibold">오직 지시사항만</strong>으로 작업을 수행하도록 요청하는 가장 기본적인 방식입니다.
+                </p>
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <p class="text-sm text-slate-400 font-mono">
+                        <span class="text-sky-400">Prompt:</span> 다음 문장의 감성을 분석해줘: "이 영화 진짜 시간 낭비였어."
+                    </p>
+                </div>
+            </div>
+
+            <div class="glass-panel p-8 rounded-3xl card-hover relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+                <div class="w-14 h-14 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center mb-6 text-indigo-400 shadow-lg shadow-indigo-900/20">
+                    <i class="fa-solid fa-list-check text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-4 text-white">Few-shot (퓨샷)</h2>
+                <p class="text-slate-300 leading-relaxed mb-6">
+                    원하는 결과물의 <strong class="text-indigo-300 font-semibold">예시(1개 이상)를 함께 제공</strong>하여 모델이 패턴을 학습하고 의도한 형식에 맞게 출력하도록 유도하는 방식입니다.
+                </p>
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <p class="text-sm text-slate-400 font-mono leading-relaxed">
+                        <span class="text-indigo-400">Prompt:</span> 문장 감성 분석<br>
+                        예시1: "최고의 경험이었어요!" -> [긍정]<br>
+                        문제: "이 영화 진짜 시간 낭비였어." -> ?
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Side-by-Side Comparison -->
+        <section class="glass-panel rounded-3xl overflow-hidden border border-slate-800">
+            <div class="p-6 border-b border-slate-800 bg-slate-800/30">
+                <h2 class="text-2xl font-bold flex items-center gap-3">
+                    <i class="fa-solid fa-code-compare text-sky-400"></i> 실제 비교 예시 (상품 리뷰 분석)
+                </h2>
+            </div>
+            
+            <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                <!-- Zero-shot Example -->
+                <div class="p-8 space-y-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-3 py-1 bg-sky-500/20 text-sky-400 rounded-lg text-sm font-semibold">Zero-shot</span>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-medium text-slate-400 uppercase tracking-wider">입력 (Prompt)</h3>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-sm text-slate-300 font-mono">
+                            다음 리뷰의 핵심 키워드를 추출해줘.<br>
+                            리뷰: "배송은 하루만에 와서 좋았는데, 포장이 다 뜯어져 있어서 기분이 별로였어요. 맛은 그럭저럭 괜찮네요."
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-medium text-slate-400 uppercase tracking-wider">출력 (Output)</h3>
+                        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm text-sky-100 font-mono shadow-inner">
+                            이 리뷰에서 추출할 수 있는 핵심 키워드는 다음과 같습니다:<br>
+                            1. 배송 (하루만에 옴)<br>
+                            2. 포장상태 (뜯어져 있음, 불만족)<br>
+                            3. 맛 (보통)<br>
+                            <span class="text-slate-400 mt-2 block italic">// 설명이 길고 포맷이 일정하지 않음</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Few-shot Example -->
+                <div class="p-8 space-y-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg text-sm font-semibold">Few-shot</span>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-medium text-slate-400 uppercase tracking-wider">입력 (Prompt)</h3>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-sm text-slate-300 font-mono h-[120px] overflow-y-auto">
+                            리뷰에서 [장점, 단점, 별점] 형식으로 추출해.<br>
+                            리뷰: "가성비 최고! 근데 배터리가 빨리 닳음" -> [장점:가격, 단점:배터리, 별점:4]<br>
+                            리뷰: "배송은 하루만에 와서 좋았는데, 포장이 다 뜯어져 있어서 기분이 별로였어요. 맛은 그럭저럭 괜찮네요." -> ?
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-medium text-slate-400 uppercase tracking-wider">출력 (Output)</h3>
+                        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm text-indigo-100 font-mono shadow-inner">
+                            [장점:배송, 단점:포장, 별점:3]
+                            <br><br>
+                            <span class="text-slate-400 mt-2 block italic">// 예시에서 지시한 정확한 포맷으로 간결하게 출력됨</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Pros/Cons Table -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                <i class="fa-solid fa-scale-balanced text-sky-400"></i> 장단점 및 특징 비교
+            </h2>
+            <div class="glass-panel rounded-3xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800/50 border-b border-slate-700">
+                                <th class="p-5 font-semibold text-slate-300 w-1/4">비교 항목</th>
+                                <th class="p-5 font-bold text-sky-400 w-3/8 text-lg">Zero-shot</th>
+                                <th class="p-5 font-bold text-indigo-400 w-3/8 text-lg">Few-shot</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <tr class="hover:bg-slate-800/20 transition-colors">
+                                <td class="p-5 font-medium text-slate-400">정확도 & 일관성</td>
+                                <td class="p-5 text-slate-300">일반적인 작업은 괜찮으나, 특수한 포맷 요구시 실패 확률 높음</td>
+                                <td class="p-5 text-slate-300">예시를 통해 패턴을 학습하므로 <strong>정확도와 포맷 일관성이 매우 높음</strong></td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/20 transition-colors">
+                                <td class="p-5 font-medium text-slate-400">토큰 소모량 (비용)</td>
+                                <td class="p-5 text-slate-300">예시가 없으므로 <strong>토큰 소모가 적고 경제적</strong></td>
+                                <td class="p-5 text-slate-300">예시 데이터만큼 프롬프트가 길어져 <strong>비용 증가</strong></td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/20 transition-colors">
+                                <td class="p-5 font-medium text-slate-400">처리 속도 (응답 시간)</td>
+                                <td class="p-5 text-slate-300">입력이 짧아 <strong>비교적 빠름</strong></td>
+                                <td class="p-5 text-slate-300">입력이 길어 약간 느릴 수 있음</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/20 transition-colors">
+                                <td class="p-5 font-medium text-slate-400">적합한 유즈케이스</td>
+                                <td class="p-5 text-slate-300">번역, 요약, 일반적인 질문답변, 아이디어 브레인스토밍</td>
+                                <td class="p-5 text-slate-300">복잡한 데이터 파싱, 감성 분석, 특정 JSON 포맷 변환</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Interactive Simulation -->
+        <section class="relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-indigo-500/10 rounded-3xl blur-xl -z-10"></div>
+            <div class="glass-panel p-8 rounded-3xl border border-slate-700 shadow-2xl">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold mb-3 text-white">직접 테스트해보기</h2>
+                    <p class="text-slate-400">동일한 문장을 두 가지 방식으로 처리했을 때의 결과를 비교해보세요.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">분석할 텍스트 입력</label>
+                        <div class="flex gap-4 flex-col sm:flex-row">
+                            <input type="text" id="sim-input" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors" value="이 식당은 분위기는 좋은데 음식이 너무 늦게 나오고 짜요." placeholder="분석할 문장을 입력하세요...">
+                            <button onclick="runSimulation()" id="sim-btn" class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 min-w-[140px]">
+                                <i class="fa-solid fa-play"></i> 실행하기
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mt-8 pt-8 border-t border-slate-700/50">
+                        <!-- Zero-shot Result box -->
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-sky-400"><i class="fa-solid fa-bolt mr-2"></i>Zero-shot 결과</h3>
+                                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">예상 출력</span>
+                            </div>
+                            <div id="result-zero" class="bg-slate-900 p-5 rounded-xl border border-slate-700 min-h-[160px] text-slate-300">
+                                <div class="text-slate-500 text-center mt-10">실행하기 버튼을 눌러주세요</div>
+                            </div>
+                        </div>
+
+                        <!-- Few-shot Result box -->
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-indigo-400"><i class="fa-solid fa-list-check mr-2"></i>Few-shot 결과</h3>
+                                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">예상 출력</span>
+                            </div>
+                            <div id="result-few" class="bg-slate-900 p-5 rounded-xl border border-slate-700 min-h-[160px] text-slate-300">
+                                <div class="text-slate-500 text-center mt-10">실행하기 버튼을 눌러주세요</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Simulation Script -->
+    <script>
+        function runSimulation() {
+            const input = document.getElementById('sim-input').value;
+            if (!input.trim()) return alert('텍스트를 입력해주세요.');
+
+            const btn = document.getElementById('sim-btn');
+            const zeroBox = document.getElementById('result-zero');
+            const fewBox = document.getElementById('result-few');
+
+            // Loading state
+            btn.disabled = true;
+            btn.innerHTML = '<div class="flex gap-1"><div class="w-2 h-2 bg-white rounded-full loading-dot"></div><div class="w-2 h-2 bg-white rounded-full loading-dot"></div><div class="w-2 h-2 bg-white rounded-full loading-dot"></div></div>';
+            
+            const loadingHtml = '<div class="flex items-center justify-center h-full mt-10 space-x-2"><div class="w-2 h-2 bg-slate-500 rounded-full loading-dot"></div><div class="w-2 h-2 bg-slate-500 rounded-full loading-dot"></div><div class="w-2 h-2 bg-slate-500 rounded-full loading-dot"></div></div>';
+            zeroBox.innerHTML = loadingHtml;
+            fewBox.innerHTML = loadingHtml;
+
+            // Call Real APIs Concurrently
+            Promise.all([
+                fetch('/api/simulate/zero-shot?text=' + encodeURIComponent(input)).then(res => res.text()),
+                fetch('/api/simulate/few-shot?text=' + encodeURIComponent(input)).then(res => res.text())
+            ]).then(([zeroResult, fewResult]) => {
+                // Replace line breaks with <br> for HTML display
+                zeroBox.innerHTML = zeroResult.replace(/\n/g, '<br>');
+                fewBox.innerHTML = '<div class="font-mono text-sm text-indigo-300">' + fewResult.replace(/\n/g, '<br>') + '</div>';
+            }).catch(err => {
+                zeroBox.innerHTML = '<div class="text-red-400 text-center mt-10">에러가 발생했습니다</div>';
+                fewBox.innerHTML = '<div class="text-red-400 text-center mt-10">에러가 발생했습니다</div>';
+                console.error(err);
+            }).finally(() => {
+                // Reset Button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> 실행하기';
+            });
+        }
+    </script>
+</body>
+</html>
